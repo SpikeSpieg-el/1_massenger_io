@@ -1,50 +1,56 @@
-// server.js
 const WebSocket = require('ws');
 const express = require('express');
 const http = require('http');
 
 const app = express();
 const server = http.createServer(app);
-
-// Создаем WebSocket сервер
 const wss = new WebSocket.Server({ server });
 
-let clients = [];
+let waitingClient = null;
 
 wss.on('connection', (ws) => {
-    if (clients.length >= 2) {
-        // Если больше 2-х клиентов, закрываем соединение
-        ws.send(JSON.stringify({ type: 'error', message: 'Only 2 clients allowed' }));
-        ws.close();
-        return;
-    }
-    
-    // Добавляем подключенного клиента в список
-    clients.push(ws);
-    console.log('New client connected. Total clients:', clients.length);
+    if (waitingClient) {
+        // Если есть ждущий клиент, подключаем его с новым клиентом
+        const client1 = waitingClient;
+        const client2 = ws;
 
-    if (clients.length === 2) {
-        // Оба клиента подключены, уведомляем их
-        clients.forEach(client => client.send(JSON.stringify({ type: 'info', message: 'Both clients connected!' })));
-    }
+        client1.send('Another user has joined. You can start chatting.');
+        client2.send('You have joined the chat. You can start chatting.');
 
-    ws.on('message', (message) => {
-        // Пересылаем сообщение другому клиенту
-        clients.forEach(client => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
+        // Обрабатываем сообщения между двумя пользователями
+        client1.on('message', (message) => {
+            client2.send(`User 1: ${message}`);
         });
-    });
+
+        client2.on('message', (message) => {
+            client1.send(`User 2: ${message}`);
+        });
+
+        // Если один из клиентов отключился
+        client1.on('close', () => {
+            client2.send('The other user has disconnected.');
+        });
+
+        client2.on('close', () => {
+            client1.send('The other user has disconnected.');
+        });
+
+        // Сбрасываем ожидание
+        waitingClient = null;
+    } else {
+        // Если нет ждущих клиентов, сохраняем этот клиент как "ожидающего"
+        waitingClient = ws;
+        ws.send('Waiting for another user to join...');
+    }
 
     ws.on('close', () => {
-        // Удаляем клиента при отключении
-        clients = clients.filter(client => client !== ws);
-        console.log('Client disconnected. Total clients:', clients.length);
+        if (ws === waitingClient) {
+            waitingClient = null;
+        }
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+// Запуск сервера на порту 3000
+server.listen(3000, () => {
+    console.log('Server started on http://localhost:3000');
 });
