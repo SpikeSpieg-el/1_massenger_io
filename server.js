@@ -10,37 +10,32 @@ let waitingClient = null;
 
 wss.on('connection', (ws) => {
     if (waitingClient) {
-        // Если есть ждущий клиент, подключаем его с новым клиентом
         const client1 = waitingClient;
         const client2 = ws;
 
-        client1.send('Another user has joined. You can start chatting.');
-        client2.send('You have joined the chat. You can start chatting.');
+        client1.send('Другой пользователь присоединился. Можно начать общение.');
+        client2.send('Вы присоединились к чату. Можно начать общение.');
 
-        // Обрабатываем сообщения между двумя пользователями
         client1.on('message', (message) => {
-            client2.send(`User 1: ${message}`);
+            client2.send(`Пользователь 1: ${message}`);
         });
 
         client2.on('message', (message) => {
-            client1.send(`User 2: ${message}`);
+            client1.send(`Пользователь 2: ${message}`);
         });
 
-        // Если один из клиентов отключился
         client1.on('close', () => {
-            client2.send('The other user has disconnected.');
+            client2.send('Другой пользователь отключился.');
         });
 
         client2.on('close', () => {
-            client1.send('The other user has disconnected.');
+            client1.send('Другой пользователь отключился.');
         });
 
-        // Сбрасываем ожидание
         waitingClient = null;
     } else {
-        // Если нет ждущих клиентов, сохраняем этот клиент как "ожидающего"
         waitingClient = ws;
-        ws.send('Waiting for another user to join...');
+        ws.send('Ожидание другого пользователя...');
     }
 
     ws.on('close', () => {
@@ -50,7 +45,7 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Запуск сервера на порту 3001
-server.listen(3001, () => {
-    console.log('Server started on http://localhost:3001');
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+    console.log(`Сервер запущен на порту ${PORT}`);
 });

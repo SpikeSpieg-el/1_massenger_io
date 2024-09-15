@@ -30,7 +30,7 @@
         const messagesDiv = document.getElementById('messages');
         const messageForm = document.getElementById('messageForm');
         const messageInput = document.getElementById('messageInput');
-        const ws = new WebSocket('ws://localhost:3001');  // Замените URL на ваш продакшн сервер
+        const ws = new WebSocket('ws://<your-ip-address>:3001');  // Замените <your-ip-address> на ваш IP-адрес
 
         ws.onopen = () => {
             addMessage("Connected to the chat. Waiting for another user...");
