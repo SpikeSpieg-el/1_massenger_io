@@ -50,7 +50,7 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Запуск сервера на порту 3000
-server.listen(3000, () => {
+// Запуск сервера на порту 3001
+server.listen(3001, () => {
     console.log('Server started on http://localhost:3001');
 });
