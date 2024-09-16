@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анонимный чат</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #chat {
+            display: none;
+            margin-top: 20px;
+        }
+        #messages {
+            border: 1px solid #ccc;
+            height: 200px;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #inputMessage {
+            width: calc(100% - 80px);
+        }
+    </style>
+</head>
+<body>
+    <h1>Анонимный чат</h1>
+    <div id="waiting">
+        Ожидание второго пользователя...
+    </div>
+    <div id="chat">
+        <div id="messages"></div>
+        <input type="text" id="inputMessage" placeholder="Введите сообщение" />
+        <button id="sendMessage">Отправить</button>
+    </div>
+
+    <script>
+        const apiUrl = 'http://f92207ks.beget.tech/chat.php';  // Ссылка на PHP скрипт на бэке
+
+        async function checkConnection() {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'wait' }),
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'connected') {
+                document.getElementById('waiting').style.display = 'none';
+                document.getElementById('chat').style.display = 'block';
+                startChat();
+            } else {
+                setTimeout(checkConnection, 3000);  // Проверяем каждые 3 секунды
+            }
+        }
+
+        async function startChat() {
+            const messageInput = document.getElementById('inputMessage');
+            const sendButton = document.getElementById('sendMessage');
+            const messagesDiv = document.getElementById('messages');
+
+            sendButton.addEventListener('click', async () => {
+                const message = messageInput.value;
+                if (message.trim()) {
+                    await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ action: 'send', message: message }),
+                    });
+                    messageInput.value = '';
+                }
+            });
+
+            // Функция для получения сообщений
+            async function receiveMessages() {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'receive' }),
+                });
+
+                const data = await response.json();
+                messagesDiv.innerHTML = '';
+
+                data.messages.forEach(msg => {
+                    const messageElement = document.createElement('div');
+                    messageElement.textContent = msg.message;
+                    messagesDiv.appendChild(messageElement);
+                });
+
+                setTimeout(receiveMessages, 2000);  // Обновляем сообщения каждые 2 секунды
+            }
+
+            receiveMessages();
+        }
+
+        // Начинаем проверку подключения
+        checkConnection();
+    </script>
+</body>
+</html>
